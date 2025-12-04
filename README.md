@@ -70,4 +70,4 @@ Kubernetes (Production orchestration)
 
 Prometheus + Grafana (Monitoring)
 
-GitHub Actions (CI/CD pipeline)
+GitHub Actions (CI/CD pipeline).

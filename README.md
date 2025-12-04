@@ -1,73 +1,73 @@
-# Welcome to your Lovable project
+🔍 HTTP Attack Analyzer 🚨 Problem Statement Modern organizations face increasing cyber threats exploiting HTTP protocol vulnerabilities through maliciously crafted URLs. Attackers use techniques like SQL injection, XSS, command injection, directory traversal, SSRF, and credential-stuffing to compromise systems. Security teams struggle to manually inspect massive traffic logs to distinguish attempted attacks from successful breaches.
 
-## Project info
+HTTP Attack Analyzer automatically detects, classifies, and differentiates between attempted and successful HTTP-based attacks, reducing alert fatigue while providing actionable intelligence.
 
-**URL**: https://lovable.dev/projects/7af34c40-07d3-48fb-b11c-7f491a487c72
+✨ Key Features 🔥 Multi-Layer Detection Signature-based: Regex patterns for known attacks (OWASP Top 10)
 
-## How can I edit this code?
+Behavioral: Anomaly detection using statistical baselines
 
-There are several ways of editing your application.
+Success Indicators: Response analysis to distinguish attempts vs breaches
 
-**Use Lovable**
+ML-powered: Classification of novel attack patterns
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/7af34c40-07d3-48fb-b11c-7f491a487c72) and start prompting.
+📊 Comprehensive Analysis PCAP file ingestion with session reconstruction
 
-Changes made via Lovable will be committed automatically to this repo.
+Real-time traffic analysis via port mirroring
 
-**Use your preferred IDE**
+Historical log processing (Apache, Nginx, WAF logs)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Attack chain visualization and timeline reconstruction
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+🎯 Actionable Intelligence Confidence Scoring: 0-1 scale for attack success likelihood
 
-Follow these steps:
+MITRE ATT&CK Mapping: TTP identification and mapping
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Prioritized Alerts: Focus on high-confidence successful attacks
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+IOC Extraction: Automated indicator extraction for SIEM integration
 
-# Step 3: Install the necessary dependencies.
-npm i
+⚡ Operational Efficiency Search & Filter: Natural language and SQL-like querying
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+Automated Reporting: Executive summaries and technical deep dives
 
-**Edit a file directly in GitHub**
+SOAR Integration: Playbook triggers for common attack patterns
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Scalable Architecture: Microservices-based, container-ready design
 
-**Use GitHub Codespaces**
+🛠 Tech Stack Backend & Processing Python 3.10+ (Primary language)
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+FastAPI (REST API framework)
 
-## What technologies are used for this project?
+Apache Kafka (Stream processing)
 
-This project is built with:
+Apache Spark (Batch processing)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Elasticsearch (Log storage and search)
 
-## How can I deploy this project?
+PostgreSQL (Metadata and results)
 
-Simply open [Lovable](https://lovable.dev/projects/7af34c40-07d3-48fb-b11c-7f491a487c72) and click on Share -> Publish.
+Redis (Caching and rate limiting)
 
-## Can I connect a custom domain to my Lovable project?
+Detection Engine Scikit-learn / XGBoost (ML models)
 
-Yes, you can!
+TensorFlow / PyTorch (Deep learning for anomaly detection)
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Suricata / Snort (Rule-based detection integration)
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Custom YAML Rules (Extensible detection rules)
+
+Frontend & Visualization React + TypeScript (Dashboard UI)
+
+D3.js / Chart.js (Visualizations)
+
+Material-UI / Ant Design (Component library)
+
+WebSocket (Real-time updates)
+
+Infrastructure Docker + Docker Compose (Containerization)
+
+Kubernetes (Production orchestration)
+
+Prometheus + Grafana (Monitoring)
+
+GitHub Actions (CI/CD pipeline)

@@ -213,11 +213,21 @@ Pre-analysis results (signature-based detection):
 - Anomaly score: ${anomalyScore}
 - Extracted IOCs: ${JSON.stringify(iocs)}
 
+IMPORTANT: The "confidence" field represents how CERTAIN you are about your assessment (whether safe OR malicious):
+- 0.9-1.0: Very high certainty (clear malicious pattern OR clearly legitimate/safe)
+- 0.7-0.89: High certainty (strong indicators present)
+- 0.5-0.69: Medium certainty (some suspicious elements but unclear)
+- 0.3-0.49: Low certainty (ambiguous input)
+- 0.1-0.29: Very low certainty (cannot make determination)
+
+For SAFE inputs (is_malicious=false), use HIGH confidence (0.8-0.95) if you're certain it's safe.
+For MALICIOUS inputs (is_malicious=true), confidence reflects certainty of the threat.
+
 Return your analysis in this exact JSON format:
 {
   "is_malicious": boolean,
   "attack_type": "sql_injection" | "xss" | "path_traversal" | "command_injection" | "xxe" | "ssrf" | "lfi" | "rce" | "brute_force" | "dos" | "reconnaissance" | "data_exfiltration" | "unknown",
-  "confidence": number (0-1),
+  "confidence": number (0-1, how certain you are about your assessment),
   "severity": "low" | "medium" | "high" | "critical",
   "is_success": boolean,
   "explanation": "detailed explanation",
@@ -288,11 +298,23 @@ Return your analysis in this exact JSON format:
     };
 
     // Build complete result
+    // Calculate final confidence: use AI confidence, boost if signatures match
+    let finalConfidence = analysis.confidence || 0.5;
+    if (signatureMatches.length > 0) {
+      // Signature match increases confidence for malicious detection
+      finalConfidence = Math.max(finalConfidence, 0.85 + (signatureMatches.length * 0.03));
+    }
+    if (anomalyScore > 0.5 && analysis.is_malicious) {
+      // High anomaly score boosts malicious confidence
+      finalConfidence = Math.max(finalConfidence, anomalyScore + 0.3);
+    }
+    finalConfidence = Math.min(finalConfidence, 1); // Cap at 1
+
     const result = {
       url: type === 'url' ? input : null,
       is_malicious: analysis.is_malicious || signatureMatches.length > 0 || anomalyScore > 0.5,
       attack_type: analysis.attack_type || (signatureMatches[0]?.attackType) || 'unknown',
-      confidence: Math.max(analysis.confidence || 0, anomalyScore),
+      confidence: finalConfidence,
       severity: analysis.severity,
       is_success: analysis.is_success,
       explanation: analysis.explanation,

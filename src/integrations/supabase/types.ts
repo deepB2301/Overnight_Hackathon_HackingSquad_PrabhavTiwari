@@ -14,7 +14,129 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      attacks: {
+        Row: {
+          attack_type: string
+          confidence: number | null
+          created_at: string | null
+          detected_at: string | null
+          id: string
+          is_success: boolean | null
+          metadata: Json | null
+          method: string | null
+          raw_request: string | null
+          raw_response: string | null
+          severity: string | null
+          source_ip: string | null
+          target_url: string
+          user_id: string
+        }
+        Insert: {
+          attack_type: string
+          confidence?: number | null
+          created_at?: string | null
+          detected_at?: string | null
+          id?: string
+          is_success?: boolean | null
+          metadata?: Json | null
+          method?: string | null
+          raw_request?: string | null
+          raw_response?: string | null
+          severity?: string | null
+          source_ip?: string | null
+          target_url: string
+          user_id: string
+        }
+        Update: {
+          attack_type?: string
+          confidence?: number | null
+          created_at?: string | null
+          detected_at?: string | null
+          id?: string
+          is_success?: boolean | null
+          metadata?: Json | null
+          method?: string | null
+          raw_request?: string | null
+          raw_response?: string | null
+          severity?: string | null
+          source_ip?: string | null
+          target_url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      uploaded_files: {
+        Row: {
+          analysis_results: Json | null
+          attacks_found: number | null
+          created_at: string | null
+          file_size: number | null
+          file_type: string | null
+          filename: string
+          id: string
+          processed_at: string | null
+          status: string | null
+          storage_path: string | null
+          user_id: string
+        }
+        Insert: {
+          analysis_results?: Json | null
+          attacks_found?: number | null
+          created_at?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          filename: string
+          id?: string
+          processed_at?: string | null
+          status?: string | null
+          storage_path?: string | null
+          user_id: string
+        }
+        Update: {
+          analysis_results?: Json | null
+          attacks_found?: number | null
+          created_at?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          filename?: string
+          id?: string
+          processed_at?: string | null
+          status?: string | null
+          storage_path?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

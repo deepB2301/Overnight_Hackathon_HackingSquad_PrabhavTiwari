@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Attack, severityColors, attackTypeColors } from '@/lib/mock-data';
-import { Clock, Globe, Target, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Attack, severityColors, getAttackTypeColor } from '@/lib/mock-data';
+import { Clock, Globe, Target, AlertTriangle, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AttackCardProps {
@@ -11,21 +11,24 @@ interface AttackCardProps {
 
 export function AttackCard({ attack, onClick }: AttackCardProps) {
   const severityBadge = severityColors[attack.severity] as 'success' | 'warning' | 'destructive';
-  const typeBadge = attackTypeColors[attack.attackType] as 'cyber' | 'accent' | 'warning' | 'destructive' | 'secondary';
+  const typeBadge = getAttackTypeColor(attack.attackType) as 'cyber' | 'accent' | 'warning' | 'destructive' | 'secondary' | 'success';
+  
+  // Support both isSuccess (legacy) and isBlocked (new) properties
+  const isBlocked = attack.isBlocked ?? !attack.isSuccess;
 
   return (
     <Card 
-      variant={attack.isSuccess ? 'danger' : 'cyber'} 
+      variant={!isBlocked ? 'danger' : 'cyber'} 
       className="cursor-pointer hover:scale-[1.01] transition-transform"
       onClick={onClick}
     >
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
               <Badge variant={typeBadge}>{attack.attackType}</Badge>
               <Badge variant={severityBadge} className="capitalize">{attack.severity}</Badge>
-              {attack.isSuccess ? (
+              {!isBlocked ? (
                 <Badge variant="destructive" className="gap-1">
                   <AlertTriangle className="h-3 w-3" />
                   Breach
@@ -42,11 +45,11 @@ export function AttackCard({ attack, onClick }: AttackCardProps) {
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Globe className="h-3.5 w-3.5" />
                 <span className="font-mono">{attack.sourceIp}</span>
-                <span className="text-xs">({attack.country})</span>
+                {attack.country && <span className="text-xs">({attack.country})</span>}
               </div>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Target className="h-3.5 w-3.5" />
-                <span className="font-mono truncate">{attack.method} {attack.targetUrl}</span>
+                <span className="font-mono truncate">{attack.method || 'GET'} {attack.targetUrl}</span>
               </div>
             </div>
             

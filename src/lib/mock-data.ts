@@ -1,6 +1,6 @@
 // Mock data for the cybersecurity dashboard
 
-export type AttackType = 'SQLi' | 'XSS' | 'CSRF' | 'RCE' | 'LFI' | 'Path Traversal' | 'Command Injection';
+export type AttackType = 'SQLi' | 'XSS' | 'CSRF' | 'RCE' | 'LFI' | 'Path Traversal' | 'Command Injection' | 'SQL Injection' | 'LDAP Injection' | 'XML Injection' | 'SSRF' | 'None' | string;
 export type Severity = 'low' | 'medium' | 'high' | 'critical';
 
 export interface Attack {
@@ -10,10 +10,11 @@ export interface Attack {
   attackType: AttackType;
   severity: Severity;
   confidence: number;
-  isSuccess: boolean;
+  isSuccess?: boolean;
+  isBlocked?: boolean;
   timestamp: Date;
-  country: string;
-  method: string;
+  country?: string;
+  method?: string;
   payload?: string;
 }
 
@@ -38,7 +39,7 @@ function generateIp(): string {
   return `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
 }
 
-const payloads: Record<AttackType, string[]> = {
+const payloads: Record<string, string[]> = {
   'SQLi': [
     "' OR '1'='1' --",
     "'; DROP TABLE users; --",
@@ -90,10 +91,11 @@ export function generateAttack(): Attack {
     severity,
     confidence: Math.round((0.7 + Math.random() * 0.3) * 100) / 100,
     isSuccess: Math.random() < 0.15,
+    isBlocked: Math.random() > 0.15,
     timestamp: new Date(Date.now() - Math.random() * 86400000),
     country: randomElement(countries),
     method: randomElement(methods),
-    payload: randomElement(payloads[attackType]),
+    payload: randomElement(payloads[attackType] || payloads['SQLi']),
   };
 }
 
@@ -129,12 +131,21 @@ export const severityColors: Record<Severity, string> = {
   critical: 'destructive',
 };
 
-export const attackTypeColors: Record<AttackType, string> = {
+export const attackTypeColors: Record<string, string> = {
   'SQLi': 'cyber',
+  'SQL Injection': 'cyber',
   'XSS': 'accent',
   'CSRF': 'warning',
   'RCE': 'destructive',
   'LFI': 'warning',
   'Path Traversal': 'secondary',
   'Command Injection': 'destructive',
+  'LDAP Injection': 'warning',
+  'XML Injection': 'warning',
+  'SSRF': 'destructive',
+  'None': 'success',
 };
+
+export function getAttackTypeColor(type: string): string {
+  return attackTypeColors[type] || 'secondary';
+}

@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 interface AttackChartProps {
-  data: { hour: string; count: number }[];
+  data: { time: string; attacks: number; blocked: number }[];
 }
 
 export function AttackChart({ data }: AttackChartProps) {
@@ -30,7 +30,7 @@ export function AttackChart({ data }: AttackChartProps) {
                 vertical={false}
               />
               <XAxis 
-                dataKey="hour" 
+                dataKey="time" 
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: 'hsl(220, 10%, 55%)', fontSize: 12 }}
@@ -54,7 +54,7 @@ export function AttackChart({ data }: AttackChartProps) {
               />
               <Area
                 type="monotone"
-                dataKey="count"
+                dataKey="attacks"
                 stroke="hsl(165, 100%, 50%)"
                 strokeWidth={2}
                 fill="url(#attackGradient)"

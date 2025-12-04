@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { StatsCard } from '@/components/StatsCard';
 import { AttackCard } from '@/components/AttackCard';
@@ -6,70 +5,46 @@ import { AttackChart } from '@/components/AttackChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  generateAttacks, 
-  generateStats, 
-  Attack, 
-  AttackStats,
-  attackTypeColors
-} from '@/lib/mock-data';
+import { useAttacks, Attack } from '@/hooks/useAttacks';
 import { 
   Shield, 
   AlertTriangle, 
-  TrendingUp, 
   Activity,
   RefreshCw,
   Download,
   Filter,
-  Zap
+  Zap,
+  Database
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 export default function Dashboard() {
-  const [attacks, setAttacks] = useState<Attack[]>([]);
-  const [stats, setStats] = useState<AttackStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { attacks, stats, loading, refetch } = useAttacks();
 
-  useEffect(() => {
-    // Initial load
-    setAttacks(generateAttacks(20));
-    setStats(generateStats());
-    setLoading(false);
-
-    // Simulate real-time updates
-    const interval = setInterval(() => {
-      setAttacks(prev => {
-        const newAttack = generateAttacks(1)[0];
-        return [newAttack, ...prev.slice(0, 19)];
+  // Generate chart data from real attacks
+  const generateTrendData = () => {
+    const now = new Date();
+    const data = [];
+    for (let i = 23; i >= 0; i--) {
+      const hour = new Date(now.getTime() - i * 3600000);
+      const hourStr = hour.toISOString().slice(0, 13);
+      const hourAttacks = attacks.filter(a => a.detected_at.slice(0, 13) === hourStr);
+      data.push({
+        time: `${hour.getHours()}:00`,
+        attacks: hourAttacks.length,
+        blocked: hourAttacks.filter(a => !a.is_success).length,
       });
-    }, 8000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const refresh = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setAttacks(generateAttacks(20));
-      setStats(generateStats());
-      setLoading(false);
-    }, 500);
+    }
+    return data;
   };
 
-  // Calculate attack type distribution
-  const attackTypeDistribution = attacks.reduce((acc, attack) => {
-    acc[attack.attackType] = (acc[attack.attackType] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const pieData = Object.entries(attackTypeDistribution).map(([name, value]) => ({
-    name,
-    value,
-  }));
+  const pieData = stats?.byType 
+    ? Object.entries(stats.byType).map(([name, value]) => ({ name, value }))
+    : [];
 
   const COLORS = ['#00ff88', '#a855f7', '#facc15', '#ef4444', '#3b82f6', '#ec4899', '#14b8a6'];
 
-  if (loading || !stats) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex items-center gap-3 text-primary">
@@ -79,6 +54,9 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  const displayAttacks: Attack[] = attacks.length > 0 ? attacks : [];
+  const displayStats = stats || { total: 0, blocked: 0, successful: 0, critical: 0, byType: {}, bySeverity: {} };
 
   return (
     <div className="min-h-screen bg-background">
@@ -96,7 +74,7 @@ export default function Dashboard() {
               <p className="text-muted-foreground">Real-time threat monitoring and analysis</p>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={refresh}>
+              <Button variant="outline" size="sm" onClick={refetch}>
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
@@ -111,134 +89,171 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* Empty State */}
+          {attacks.length === 0 && (
+            <Card variant="cyber" className="mb-8">
+              <CardContent className="py-12 text-center">
+                <Database className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Attacks Detected Yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Start analyzing URLs or upload log files to detect threats.
+                </p>
+                <Button variant="cyber" asChild>
+                  <a href="/analyze">Start Analyzing</a>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <StatsCard
               title="Total Attacks"
-              value={stats.total}
-              change="+12.5% from last week"
-              changeType="negative"
+              value={displayStats.total}
+              change={displayStats.total > 0 ? "Detected threats" : "No threats yet"}
+              changeType={displayStats.total > 0 ? "negative" : "neutral"}
               icon={Activity}
               variant="cyber"
             />
             <StatsCard
               title="Blocked"
-              value={stats.blocked}
-              change="97% success rate"
+              value={displayStats.blocked}
+              change={displayStats.total > 0 ? `${Math.round((displayStats.blocked / displayStats.total) * 100) || 0}% block rate` : "N/A"}
               changeType="positive"
               icon={Shield}
               variant="success"
             />
             <StatsCard
               title="Successful Breaches"
-              value={stats.successful}
-              change="-8% from last week"
-              changeType="positive"
+              value={displayStats.successful}
+              change={displayStats.successful > 0 ? "Requires review" : "None detected"}
+              changeType={displayStats.successful > 0 ? "negative" : "positive"}
               icon={AlertTriangle}
               variant="danger"
             />
             <StatsCard
               title="Critical Threats"
-              value={stats.critical}
-              change="Requires attention"
-              changeType="negative"
+              value={displayStats.critical}
+              change={displayStats.critical > 0 ? "Immediate action" : "All clear"}
+              changeType={displayStats.critical > 0 ? "negative" : "positive"}
               icon={Zap}
               variant="warning"
             />
           </div>
 
           {/* Charts Row */}
-          <div className="grid lg:grid-cols-3 gap-6 mb-8">
-            {/* Timeline Chart */}
-            <AttackChart data={stats.trends} />
+          {attacks.length > 0 && (
+            <div className="grid lg:grid-cols-3 gap-6 mb-8">
+              {/* Timeline Chart */}
+              <AttackChart data={generateTrendData()} />
 
-            {/* Attack Distribution */}
+              {/* Attack Distribution */}
+              <Card variant="cyber">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
+                    Attack Types
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {pieData.length > 0 ? (
+                    <>
+                      <div className="h-[250px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={pieData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={60}
+                              outerRadius={90}
+                              paddingAngle={2}
+                              dataKey="value"
+                            >
+                              {pieData.map((entry, index) => (
+                                <Cell 
+                                  key={`cell-${index}`} 
+                                  fill={COLORS[index % COLORS.length]}
+                                  stroke="hsl(220, 20%, 7%)"
+                                  strokeWidth={2}
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: 'hsl(220, 20%, 7%)',
+                                border: '1px solid hsl(165, 100%, 50%, 0.3)',
+                                borderRadius: '8px',
+                              }}
+                              labelStyle={{ color: 'hsl(180, 100%, 95%)' }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-4 justify-center">
+                        {pieData.slice(0, 4).map((entry, index) => (
+                          <div key={entry.name} className="flex items-center gap-1.5 text-xs">
+                            <div 
+                              className="w-2 h-2 rounded-full" 
+                              style={{ backgroundColor: COLORS[index] }}
+                            />
+                            <span className="text-muted-foreground">{entry.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                      No attack data available
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Recent Attacks */}
+          {attacks.length > 0 && (
             <Card variant="cyber">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
-                  Attack Types
-                </CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
+                    Recent Attacks
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Your detected security threats
+                  </p>
+                </div>
+                <Badge variant="cyber" className="gap-1">
+                  <Activity className="h-3 w-3" />
+                  {attacks.length} total
+                </Badge>
               </CardHeader>
               <CardContent>
-                <div className="h-[250px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={90}
-                        paddingAngle={2}
-                        dataKey="value"
-                      >
-                        {pieData.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={COLORS[index % COLORS.length]}
-                            stroke="hsl(220, 20%, 7%)"
-                            strokeWidth={2}
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'hsl(220, 20%, 7%)',
-                          border: '1px solid hsl(165, 100%, 50%, 0.3)',
-                          borderRadius: '8px',
-                        }}
-                        labelStyle={{ color: 'hsl(180, 100%, 95%)' }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="flex flex-wrap gap-2 mt-4 justify-center">
-                  {pieData.slice(0, 4).map((entry, index) => (
-                    <div key={entry.name} className="flex items-center gap-1.5 text-xs">
-                      <div 
-                        className="w-2 h-2 rounded-full" 
-                        style={{ backgroundColor: COLORS[index] }}
-                      />
-                      <span className="text-muted-foreground">{entry.name}</span>
+                <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                  {displayAttacks.map((attack, i) => (
+                    <div
+                      key={attack.id}
+                      className="animate-fade-in"
+                      style={{ animationDelay: `${i * 0.05}s` }}
+                    >
+                      <AttackCard attack={{
+                        id: attack.id,
+                        timestamp: new Date(attack.detected_at),
+                        sourceIp: attack.source_ip || 'Unknown',
+                        targetUrl: attack.target_url,
+                        attackType: attack.attack_type,
+                        severity: attack.severity,
+                        confidence: attack.confidence,
+                        isBlocked: !attack.is_success,
+                      }} />
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
-          </div>
-
-          {/* Recent Attacks */}
-          <Card variant="cyber">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
-                  Recent Attacks
-                </CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Live feed of detected threats
-                </p>
-              </div>
-              <Badge variant="cyber" className="gap-1">
-                <Activity className="h-3 w-3" />
-                Live
-              </Badge>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                {attacks.map((attack, i) => (
-                  <div
-                    key={attack.id}
-                    className="animate-fade-in"
-                    style={{ animationDelay: `${i * 0.05}s` }}
-                  >
-                    <AttackCard attack={attack} />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          )}
         </div>
       </main>
     </div>

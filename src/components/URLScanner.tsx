@@ -3,57 +3,67 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Shield, AlertTriangle, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Search, Shield, AlertTriangle, Loader2, CheckCircle, XCircle, Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAnalyzeThreat } from '@/hooks/useAttacks';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ScanResult {
   url: string;
-  safe: boolean;
-  threats: string[];
+  is_malicious: boolean;
+  attack_type: string;
   confidence: number;
-  timestamp: Date;
+  severity: string;
+  is_success: boolean;
+  explanation: string;
+  indicators: string[];
+  recommendations: string[];
+  analyzed_at: string;
 }
 
 export function URLScanner() {
   const [url, setUrl] = useState('');
-  const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
+  const { analyze, analyzing } = useAnalyzeThreat();
+  const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleScan = async () => {
     if (!url.trim()) return;
     
-    setScanning(true);
     setResult(null);
 
-    // Simulate scanning
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      const data = await analyze(url, 'url');
+      
+      if (data.error) {
+        toast({
+          title: 'Analysis Error',
+          description: data.error,
+          variant: 'destructive',
+        });
+        return;
+      }
 
-    // Check for common malicious patterns
-    const threats: string[] = [];
-    const lowerUrl = url.toLowerCase();
-    
-    if (lowerUrl.includes('<script') || lowerUrl.includes('javascript:')) {
-      threats.push('XSS Attack Pattern');
-    }
-    if (lowerUrl.includes("'") && (lowerUrl.includes('or') || lowerUrl.includes('union') || lowerUrl.includes('select'))) {
-      threats.push('SQL Injection Pattern');
-    }
-    if (lowerUrl.includes('..') && lowerUrl.includes('/')) {
-      threats.push('Path Traversal Attempt');
-    }
-    if (lowerUrl.includes('cmd=') || lowerUrl.includes('exec(') || lowerUrl.includes('system(')) {
-      threats.push('Command Injection');
-    }
+      setResult({
+        url,
+        ...data,
+      });
 
-    setResult({
-      url,
-      safe: threats.length === 0,
-      threats,
-      confidence: threats.length > 0 ? 0.85 + Math.random() * 0.14 : 0.95 + Math.random() * 0.05,
-      timestamp: new Date(),
-    });
-
-    setScanning(false);
+      if (data.is_malicious && user) {
+        toast({
+          title: 'Threat Detected & Logged',
+          description: 'This threat has been added to your security dashboard.',
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Analysis Failed',
+        description: error.message || 'Failed to analyze the URL',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -61,7 +71,11 @@ export function URLScanner() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Shield className="h-5 w-5 text-primary" />
-          URL Threat Scanner
+          AI Threat Scanner
+          <Badge variant="cyber" className="ml-2 gap-1">
+            <Brain className="h-3 w-3" />
+            ML Powered
+          </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -80,12 +94,12 @@ export function URLScanner() {
           <Button 
             variant="cyber" 
             onClick={handleScan} 
-            disabled={scanning || !url.trim()}
+            disabled={analyzing || !url.trim()}
           >
-            {scanning ? (
+            {analyzing ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Scanning...
+                Analyzing...
               </>
             ) : (
               'Analyze'
@@ -114,42 +128,76 @@ export function URLScanner() {
           >
             Path Traversal
           </button>
+          <button 
+            className="text-primary hover:underline font-mono"
+            onClick={() => setUrl("; cat /etc/passwd")}
+          >
+            Command Injection
+          </button>
         </div>
 
         {result && (
           <div className={cn(
             "p-4 rounded-xl border transition-all duration-300 animate-fade-in",
-            result.safe 
+            !result.is_malicious 
               ? "bg-success/5 border-success/30" 
               : "bg-destructive/5 border-destructive/30"
           )}>
             <div className="flex items-start gap-3">
-              {result.safe ? (
+              {!result.is_malicious ? (
                 <CheckCircle className="h-6 w-6 text-success flex-shrink-0 mt-0.5" />
               ) : (
                 <XCircle className="h-6 w-6 text-destructive flex-shrink-0 mt-0.5" />
               )}
-              <div className="flex-1 min-w-0 space-y-2">
-                <div className="flex items-center justify-between gap-2">
+              <div className="flex-1 min-w-0 space-y-3">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
                   <p className={cn(
                     "font-semibold",
-                    result.safe ? "text-success" : "text-destructive"
+                    !result.is_malicious ? "text-success" : "text-destructive"
                   )}>
-                    {result.safe ? 'No Threats Detected' : 'Threats Detected!'}
+                    {!result.is_malicious ? 'No Threats Detected' : `${result.attack_type} Detected`}
                   </p>
-                  <Badge variant={result.safe ? 'success' : 'destructive'}>
-                    {Math.round(result.confidence * 100)}% confidence
-                  </Badge>
+                  <div className="flex gap-2">
+                    <Badge variant={!result.is_malicious ? 'success' : 'destructive'}>
+                      {result.confidence}% confidence
+                    </Badge>
+                    {result.is_malicious && (
+                      <Badge variant={
+                        result.severity === 'critical' ? 'destructive' :
+                        result.severity === 'high' ? 'destructive' :
+                        result.severity === 'medium' ? 'warning' : 'secondary'
+                      }>
+                        {result.severity}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 
-                {result.threats.length > 0 && (
+                {result.explanation && (
+                  <p className="text-sm text-muted-foreground">
+                    {result.explanation}
+                  </p>
+                )}
+
+                {result.indicators && result.indicators.length > 0 && (
                   <div className="flex flex-wrap gap-2">
-                    {result.threats.map((threat, i) => (
-                      <Badge key={i} variant="destructive" className="gap-1">
+                    {result.indicators.map((indicator, i) => (
+                      <Badge key={i} variant="outline" className="gap-1 text-xs">
                         <AlertTriangle className="h-3 w-3" />
-                        {threat}
+                        {indicator}
                       </Badge>
                     ))}
+                  </div>
+                )}
+
+                {result.recommendations && result.recommendations.length > 0 && (
+                  <div className="mt-2 p-2 rounded-lg bg-secondary/50">
+                    <p className="text-xs font-medium mb-1">Recommendations:</p>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      {result.recommendations.slice(0, 3).map((rec, i) => (
+                        <li key={i}>• {rec}</li>
+                      ))}
+                    </ul>
                   </div>
                 )}
                 

@@ -16,49 +16,79 @@ export type Database = {
     Tables: {
       attacks: {
         Row: {
+          anomaly_score: number | null
           attack_type: string
           confidence: number | null
           created_at: string | null
           detected_at: string | null
+          detection_method: string | null
           id: string
+          iocs: Json | null
           is_success: boolean | null
           metadata: Json | null
           method: string | null
+          mitre_id: string | null
+          mitre_tactic: string | null
+          mitre_technique: string | null
+          payload: string | null
           raw_request: string | null
           raw_response: string | null
+          response_code: number | null
+          response_size: number | null
           severity: string | null
+          signatures_matched: Json | null
           source_ip: string | null
           target_url: string
           user_id: string
         }
         Insert: {
+          anomaly_score?: number | null
           attack_type: string
           confidence?: number | null
           created_at?: string | null
           detected_at?: string | null
+          detection_method?: string | null
           id?: string
+          iocs?: Json | null
           is_success?: boolean | null
           metadata?: Json | null
           method?: string | null
+          mitre_id?: string | null
+          mitre_tactic?: string | null
+          mitre_technique?: string | null
+          payload?: string | null
           raw_request?: string | null
           raw_response?: string | null
+          response_code?: number | null
+          response_size?: number | null
           severity?: string | null
+          signatures_matched?: Json | null
           source_ip?: string | null
           target_url: string
           user_id: string
         }
         Update: {
+          anomaly_score?: number | null
           attack_type?: string
           confidence?: number | null
           created_at?: string | null
           detected_at?: string | null
+          detection_method?: string | null
           id?: string
+          iocs?: Json | null
           is_success?: boolean | null
           metadata?: Json | null
           method?: string | null
+          mitre_id?: string | null
+          mitre_tactic?: string | null
+          mitre_technique?: string | null
+          payload?: string | null
           raw_request?: string | null
           raw_response?: string | null
+          response_code?: number | null
+          response_size?: number | null
           severity?: string | null
+          signatures_matched?: Json | null
           source_ip?: string | null
           target_url?: string
           user_id?: string
@@ -91,6 +121,42 @@ export type Database = {
           full_name?: string | null
           id?: string
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      reports: {
+        Row: {
+          content: Json | null
+          created_at: string | null
+          date_range_end: string | null
+          date_range_start: string | null
+          generated_at: string | null
+          id: string
+          report_type: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          content?: Json | null
+          created_at?: string | null
+          date_range_end?: string | null
+          date_range_start?: string | null
+          generated_at?: string | null
+          id?: string
+          report_type?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          content?: Json | null
+          created_at?: string | null
+          date_range_end?: string | null
+          date_range_start?: string | null
+          generated_at?: string | null
+          id?: string
+          report_type?: string
+          title?: string
           user_id?: string
         }
         Relationships: []

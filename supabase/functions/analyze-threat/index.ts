@@ -298,16 +298,35 @@ Return your analysis in this exact JSON format:
     };
 
     // Build complete result
-    // Calculate final confidence: use AI confidence, boost if signatures match
+    // Calculate final confidence based on threat level
     let finalConfidence = analysis.confidence || 0.5;
-    if (signatureMatches.length > 0) {
-      // Signature match increases confidence for malicious detection
-      finalConfidence = Math.max(finalConfidence, 0.85 + (signatureMatches.length * 0.03));
+    
+    if (analysis.is_malicious) {
+      // For MALICIOUS: boost confidence based on evidence
+      if (signatureMatches.length > 0) {
+        // Strong signature evidence = high confidence threat
+        finalConfidence = Math.max(finalConfidence, 0.85 + (signatureMatches.length * 0.03));
+      }
+      if (anomalyScore > 0.5) {
+        // High anomaly score boosts malicious confidence
+        finalConfidence = Math.max(finalConfidence, 0.7 + (anomalyScore * 0.25));
+      }
+    } else {
+      // For SAFE: if no signatures and low anomaly, we're confident it's safe
+      if (signatureMatches.length === 0 && anomalyScore < 0.2) {
+        // No threats detected = high confidence it's safe
+        finalConfidence = Math.max(finalConfidence, 0.85);
+      } else if (signatureMatches.length === 0 && anomalyScore < 0.4) {
+        // Low anomaly = moderate-high confidence
+        finalConfidence = Math.max(finalConfidence, 0.75);
+      }
+      // Known legitimate domains get higher confidence
+      const trustedDomains = ['github.com', 'google.com', 'microsoft.com', 'stackoverflow.com', 'npmjs.com'];
+      if (trustedDomains.some(d => input.toLowerCase().includes(d))) {
+        finalConfidence = Math.max(finalConfidence, 0.9);
+      }
     }
-    if (anomalyScore > 0.5 && analysis.is_malicious) {
-      // High anomaly score boosts malicious confidence
-      finalConfidence = Math.max(finalConfidence, anomalyScore + 0.3);
-    }
+    
     finalConfidence = Math.min(finalConfidence, 1); // Cap at 1
 
     const result = {

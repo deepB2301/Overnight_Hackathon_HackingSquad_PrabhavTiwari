@@ -2,6 +2,7 @@ import { Navbar } from '@/components/Navbar';
 import { StatsCard } from '@/components/StatsCard';
 import { AttackCard } from '@/components/AttackCard';
 import { AttackChart } from '@/components/AttackChart';
+import { AttackGlobe } from '@/components/AttackGlobe';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -141,9 +142,16 @@ export default function Dashboard() {
             />
           </div>
 
+          {/* Globe Visualization */}
+          {attacks.length > 0 && (
+            <div className="mb-8">
+              <AttackGlobe attacks={attacks} />
+            </div>
+          )}
+
           {/* Charts Row */}
           {attacks.length > 0 && (
-            <div className="grid lg:grid-cols-3 gap-6 mb-8">
+            <div className="grid lg:grid-cols-2 gap-6 mb-8">
               {/* Timeline Chart */}
               <AttackChart data={generateTrendData()} />
 

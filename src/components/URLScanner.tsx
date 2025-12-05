@@ -171,7 +171,7 @@ export function URLScanner() {
                   </p>
                   <div className="flex gap-2">
                     <Badge variant={!result.is_malicious ? 'success' : 'destructive'}>
-                      {result.confidence}% confidence
+                      {Math.round(result.confidence * 100)}% confidence
                     </Badge>
                     {result.is_malicious && (
                       <Badge variant={

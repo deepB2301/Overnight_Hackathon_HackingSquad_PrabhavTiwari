@@ -299,44 +299,52 @@ Return your analysis in this exact JSON format:
 
     // Build complete result
     // Calculate final confidence based on threat level
-    let finalConfidence = analysis.confidence || 0.5;
+    console.log('AI returned confidence:', analysis.confidence, 'is_malicious:', analysis.is_malicious);
     
-    if (analysis.is_malicious) {
-      // For MALICIOUS: boost confidence based on evidence
+    let finalConfidence: number;
+    
+    if (analysis.is_malicious || signatureMatches.length > 0 || anomalyScore > 0.5) {
+      // MALICIOUS URL: confidence reflects threat certainty
+      finalConfidence = analysis.confidence || 0.7;
+      
+      // Boost based on signature evidence
       if (signatureMatches.length > 0) {
-        // Strong signature evidence = high confidence threat
-        finalConfidence = Math.max(finalConfidence, 0.88 + (signatureMatches.length * 0.03));
+        finalConfidence = 0.85 + (signatureMatches.length * 0.05);
       }
-      if (anomalyScore > 0.5) {
-        // High anomaly score boosts malicious confidence
+      // Boost based on anomaly score
+      if (anomalyScore > 0.3) {
         finalConfidence = Math.max(finalConfidence, 0.75 + (anomalyScore * 0.2));
       }
-      // Minimum confidence for detected threats
-      finalConfidence = Math.max(finalConfidence, 0.7);
+      // Minimum 70% for threats
+      finalConfidence = Math.max(finalConfidence, 0.70);
+      // Cap at 99%
+      finalConfidence = Math.min(finalConfidence, 0.99);
     } else {
-      // For SAFE URLs: high confidence when we're certain it's safe
-      // No signatures and low anomaly = very confident it's safe
-      if (signatureMatches.length === 0 && anomalyScore < 0.1) {
-        finalConfidence = Math.max(finalConfidence, 0.95);
-      } else if (signatureMatches.length === 0 && anomalyScore < 0.3) {
-        finalConfidence = Math.max(finalConfidence, 0.92);
-      } else if (signatureMatches.length === 0) {
-        finalConfidence = Math.max(finalConfidence, 0.88);
+      // SAFE URL: high confidence when verified safe
+      // Start with high base confidence for safe URLs
+      finalConfidence = 0.90;
+      
+      // Well-known legitimate domains get highest confidence (97%)
+      const trustedDomains = ['github.com', 'google.com', 'microsoft.com', 'stackoverflow.com', 'npmjs.com', 'youtube.com', 'linkedin.com', 'twitter.com', 'facebook.com', 'amazon.com', 'apple.com', 'gitlab.com', 'bitbucket.org', 'cloudflare.com', 'vercel.app', 'netlify.app', 'lovable.dev', 'vercel.com', 'netlify.com'];
+      const isTrusted = trustedDomains.some(d => input.toLowerCase().includes(d));
+      
+      if (isTrusted) {
+        finalConfidence = 0.97;
+      } else if (signatureMatches.length === 0 && anomalyScore === 0) {
+        // Clean URL with no issues = 95%
+        finalConfidence = 0.95;
+      } else if (signatureMatches.length === 0 && anomalyScore < 0.2) {
+        // Minor anomaly but no signatures = 92%
+        finalConfidence = 0.92;
       }
       
-      // Well-known legitimate domains get highest confidence
-      const trustedDomains = ['github.com', 'google.com', 'microsoft.com', 'stackoverflow.com', 'npmjs.com', 'youtube.com', 'linkedin.com', 'twitter.com', 'facebook.com', 'amazon.com', 'apple.com', 'gitlab.com', 'bitbucket.org', 'cloudflare.com', 'vercel.com', 'netlify.com'];
-      if (trustedDomains.some(d => input.toLowerCase().includes(d))) {
-        finalConfidence = Math.max(finalConfidence, 0.97);
-      }
-      
-      // Valid URL structure with HTTPS = boost confidence
-      if (input.startsWith('https://') && !input.includes('..') && !input.includes('<')) {
-        finalConfidence = Math.max(finalConfidence, 0.9);
+      // Valid HTTPS gives minimum 90%
+      if (input.startsWith('https://')) {
+        finalConfidence = Math.max(finalConfidence, 0.90);
       }
     }
     
-    finalConfidence = Math.min(finalConfidence, 0.99); // Cap at 99%
+    console.log('Final calculated confidence:', finalConfidence);
 
     const result = {
       url: type === 'url' ? input : null,

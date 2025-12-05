@@ -305,29 +305,38 @@ Return your analysis in this exact JSON format:
       // For MALICIOUS: boost confidence based on evidence
       if (signatureMatches.length > 0) {
         // Strong signature evidence = high confidence threat
-        finalConfidence = Math.max(finalConfidence, 0.85 + (signatureMatches.length * 0.03));
+        finalConfidence = Math.max(finalConfidence, 0.88 + (signatureMatches.length * 0.03));
       }
       if (anomalyScore > 0.5) {
         // High anomaly score boosts malicious confidence
-        finalConfidence = Math.max(finalConfidence, 0.7 + (anomalyScore * 0.25));
+        finalConfidence = Math.max(finalConfidence, 0.75 + (anomalyScore * 0.2));
       }
+      // Minimum confidence for detected threats
+      finalConfidence = Math.max(finalConfidence, 0.7);
     } else {
-      // For SAFE: if no signatures and low anomaly, we're confident it's safe
-      if (signatureMatches.length === 0 && anomalyScore < 0.2) {
-        // No threats detected = high confidence it's safe
-        finalConfidence = Math.max(finalConfidence, 0.85);
-      } else if (signatureMatches.length === 0 && anomalyScore < 0.4) {
-        // Low anomaly = moderate-high confidence
-        finalConfidence = Math.max(finalConfidence, 0.75);
+      // For SAFE URLs: high confidence when we're certain it's safe
+      // No signatures and low anomaly = very confident it's safe
+      if (signatureMatches.length === 0 && anomalyScore < 0.1) {
+        finalConfidence = Math.max(finalConfidence, 0.95);
+      } else if (signatureMatches.length === 0 && anomalyScore < 0.3) {
+        finalConfidence = Math.max(finalConfidence, 0.92);
+      } else if (signatureMatches.length === 0) {
+        finalConfidence = Math.max(finalConfidence, 0.88);
       }
-      // Known legitimate domains get higher confidence
-      const trustedDomains = ['github.com', 'google.com', 'microsoft.com', 'stackoverflow.com', 'npmjs.com'];
+      
+      // Well-known legitimate domains get highest confidence
+      const trustedDomains = ['github.com', 'google.com', 'microsoft.com', 'stackoverflow.com', 'npmjs.com', 'youtube.com', 'linkedin.com', 'twitter.com', 'facebook.com', 'amazon.com', 'apple.com', 'gitlab.com', 'bitbucket.org', 'cloudflare.com', 'vercel.com', 'netlify.com'];
       if (trustedDomains.some(d => input.toLowerCase().includes(d))) {
+        finalConfidence = Math.max(finalConfidence, 0.97);
+      }
+      
+      // Valid URL structure with HTTPS = boost confidence
+      if (input.startsWith('https://') && !input.includes('..') && !input.includes('<')) {
         finalConfidence = Math.max(finalConfidence, 0.9);
       }
     }
     
-    finalConfidence = Math.min(finalConfidence, 1); // Cap at 1
+    finalConfidence = Math.min(finalConfidence, 0.99); // Cap at 99%
 
     const result = {
       url: type === 'url' ? input : null,

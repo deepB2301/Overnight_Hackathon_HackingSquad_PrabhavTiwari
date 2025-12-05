@@ -3,11 +3,17 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Shield, AlertTriangle, Loader2, CheckCircle, XCircle, Brain } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Search, Shield, AlertTriangle, Loader2, CheckCircle, XCircle, Brain, Activity, Fingerprint, Cpu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAnalyzeThreat } from '@/hooks/useAttacks';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+
+interface SignatureMatch {
+  attackType: string;
+  patterns: string[];
+}
 
 interface ScanResult {
   url: string;
@@ -20,6 +26,12 @@ interface ScanResult {
   indicators: string[];
   recommendations: string[];
   analyzed_at: string;
+  detection_method?: string;
+  signatures_matched?: SignatureMatch[];
+  anomaly_score?: number;
+  mitre_tactic?: string;
+  mitre_technique?: string;
+  mitre_id?: string;
 }
 
 export function URLScanner() {
@@ -187,6 +199,64 @@ export function URLScanner() {
                         {indicator}
                       </Badge>
                     ))}
+                  </div>
+                )}
+
+                {/* Detection Details */}
+                <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-background/50 border border-border/50">
+                  {/* Anomaly Score */}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-xs font-medium">
+                      <Activity className="h-3 w-3 text-primary" />
+                      Anomaly Score
+                    </div>
+                    <Progress 
+                      value={(result.anomaly_score || 0) * 100} 
+                      className="h-2"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {((result.anomaly_score || 0) * 100).toFixed(0)}% deviation
+                    </p>
+                  </div>
+                  
+                  {/* Detection Method */}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-xs font-medium">
+                      <Cpu className="h-3 w-3 text-primary" />
+                      Detection Method
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {result.detection_method === 'signature+ai' ? 'Signature + AI' : 'AI Analysis'}
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Signature Matches */}
+                {result.signatures_matched && result.signatures_matched.length > 0 && (
+                  <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-destructive mb-2">
+                      <Fingerprint className="h-3 w-3" />
+                      Signature Matches ({result.signatures_matched.length})
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {result.signatures_matched.map((match, i) => (
+                        <Badge key={i} variant="destructive" className="text-xs">
+                          {match.attackType.replace(/_/g, ' ')}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* MITRE ATT&CK */}
+                {result.mitre_id && result.mitre_id !== 'N/A' && (
+                  <div className="flex items-center gap-2 text-xs">
+                    <Badge variant="cyber" className="font-mono">
+                      {result.mitre_id}
+                    </Badge>
+                    <span className="text-muted-foreground">
+                      {result.mitre_tactic} → {result.mitre_technique}
+                    </span>
                   </div>
                 )}
 

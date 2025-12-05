@@ -6,7 +6,7 @@ HTTP Attack Analyzer automatically detects, classifies, and differentiates betwe
 
 Behavioral: Anomaly detection using statistical baselines
 
-Success Indicators: Response analysis to distinguish attempts vs breaches
+Success Indicators: Response analysis to distinguish attempts vs breaches.
 
 ML-powered: Classification of novel attack patterns
 

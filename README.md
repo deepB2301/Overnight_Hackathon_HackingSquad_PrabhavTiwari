@@ -33,41 +33,33 @@ Automated Reporting: Executive summaries and technical deep dives
 SOAR Integration: Playbook triggers for common attack patterns
 
 Scalable Architecture: Microservices-based, container-ready design
+Tech Stack :
 
-🛠 Tech Stack Backend & Processing Python 3.10+ (Primary language)
+Frontend
 
-FastAPI (REST API framework)
+Framework: React 18 + TypeScript
+Build Tool: Vite
+Styling: Tailwind CSS + shadcn/ui components
+State Management: TanStack React Query
+Routing: React Router DOM
+Visualizations: Recharts (charts), react-globe.gl (3D globe)
+Animations: Custom CSS + Matrix rain effect
+Backend (Lovable Cloud / Supabase):
 
-Apache Kafka (Stream processing)
+Database: PostgreSQL (tables: attacks, profiles, reports, uploaded_files)
+Authentication: Supabase Auth (email/password)
+File Storage: Supabase Storage (uploads bucket)
+Serverless Functions: Deno Edge Functions
+AI/ML Layer:
 
-Apache Spark (Batch processing)
+Model: Google Gemini 2.5 Flash (via Lovable AI Gateway)
+Use Cases: Threat analysis, attack classification, report generation
 
-Elasticsearch (Log storage and search)
+Workflow:
 
-PostgreSQL (Metadata and results)
-
-Redis (Caching and rate limiting)
-
-Detection Engine Scikit-learn / XGBoost (ML models)
-
-TensorFlow / PyTorch (Deep learning for anomaly detection)
-
-Suricata / Snort (Rule-based detection integration)
-
-Custom YAML Rules (Extensible detection rules)
-
-Frontend & Visualization React + TypeScript (Dashboard UI)
-
-D3.js / Chart.js (Visualizations)
-
-Material-UI / Ant Design (Component library)
-
-WebSocket (Real-time updates)
-
-Infrastructure Docker + Docker Compose (Containerization)
-
-Kubernetes (Production orchestration)
-
-Prometheus + Grafana (Monitoring)
-
-GitHub Actions (CI/CD pipeline).
+User uploads file/URL → Edge Function (process-file or analyze-threat)
+    → Lovable AI Gateway → Gemini 2.5 Flash analyzes content
+    → Extracts: attack type, MITRE ATT&CK mapping, IOCs, confidence score
+    → Results stored in PostgreSQL (attacks table)
+    → Frontend fetches via Supabase SDK
+    → Displayed on Dashboard (globe, charts, cards)
